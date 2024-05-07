@@ -65,34 +65,40 @@ int main(int argc, char *argv[]) {
     p = init_list(p);
     head = p;
     int linked_list_count = 0;
-    struct node * linked_list_addresses[N+1] = { NULL };
+    struct node *linked_list_addresses[N + 1] = {NULL};
     start = omp_get_wtime(); {
-        while (p != NULL) {
-            linked_list_addresses[linked_list_count] = p;
-            p = p->next;
-            linked_list_count++;
+#pragma omp parallel default(none) firstprivate(p)
+        {
+#pragma omp single 
+            {
+                while (p != NULL) {
+                    //linked_list_addresses[linked_list_count] = p;
+#pragma omp task firstprivate(p)
+                    processwork(p);
+                    p = p->next;
+                    //linked_list_count++;
+                }
+            }
         }
-    }
-    // printf("Number of nodes in ll:\t%d\n",linked_list_count);
-#pragma omp parallel for schedule(static, 1)
-    for (int i=0; i<linked_list_count; i++) {
-        processwork(linked_list_addresses[i]);
-    }
+        // printf("Number of nodes in ll:\t%d\n",linked_list_count);
+        /*#pragma omp parallel for schedule(static, 1)
+            for (int i=0; i<linked_list_count; i++) {
+            }*/
 
-    end = omp_get_wtime();
+        end = omp_get_wtime();
 
 
-
-    p = head;
-    while (p != NULL) {
-        printf("%d : %d\n", p->data, p->fibdata);
-        temp = p->next;
+        p = head;
+        while (p != NULL) {
+            printf("%d : %d\n", p->data, p->fibdata);
+            temp = p->next;
+            free(p);
+            p = temp;
+        }
         free(p);
-        p = temp;
+
+        printf("Compute Time: %f seconds\n", end - start);
+
+        return 0;
     }
-    free(p);
-
-    printf("Compute Time: %f seconds\n", end - start);
-
-    return 0;
 }
