@@ -133,3 +133,22 @@ vector<tuple<vector<float>, int, float>> euclidean_list(vector<pair<vector<float
     return list;
 }
 
+int partition(int left, int right, vector<tuple<vector<float>, int, float>>& items)
+{
+    // Added reference
+    float item = get<2>(items[right]);
+
+    int i = left - 1;
+
+    for (int j = left; j < right; j++)
+    {
+        if (get<2>(items[j]) <= item)
+        {
+            i++;
+            items[i].swap(items[j]);
+        }
+    }
+    items[i + 1].swap(items[right]);
+    return i + 1;
+}
+
