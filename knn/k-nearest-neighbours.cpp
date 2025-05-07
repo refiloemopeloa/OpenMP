@@ -322,3 +322,22 @@ vector<pair<vector<float>, int>> train_list(vector<pair<vector<float>, int>>& fe
     return trained;
 }
 
+float compute_accuracy(vector<pair<vector<float>, int>>& trained_list,
+                       vector<pair<vector<float>, int>>& test_feature_labels)
+{
+    int correct = 0;
+    for (int i = 0; i < trained_list.size(); i++)
+    {
+        if (trained_list[i].second == test_feature_labels[i].second)
+        {
+            correct++;
+        }
+    }
+
+    int n = trained_list.size();
+
+    float accuracy = (static_cast<float>(correct) / n);
+
+    return accuracy;
+}
+
