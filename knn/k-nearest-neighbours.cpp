@@ -401,7 +401,7 @@ int main()
         {
             cout << mode << "\n\n";
             start_total = high_resolution_clock::now();
-            trained_list = train_list(feature_labels, test_features, K, true, mode);
+            trained_list = train_list(feature_labels, test_features, k, true, mode);
             end_total = high_resolution_clock::now();
             time_total = duration_cast<nanoseconds>(end_total - start_total);
             total_time = time_total.count();
