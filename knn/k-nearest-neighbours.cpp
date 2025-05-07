@@ -67,3 +67,16 @@ vector<int> read_labels(const string& filename, size_t num_samples)
 
     return labels;
 }
+vector<pair<vector<float>, int>> make_list(vector<vector<float>>& features, vector<int>& labels)
+{
+    vector<pair<vector<float>, int>> items;
+    pair<vector<float>, int> item;
+
+    for (int i = 0; i < features.size(); i++)
+    {
+        item = {features[i], labels[i]};
+        items.push_back(item);
+    }
+
+    return items;
+}
