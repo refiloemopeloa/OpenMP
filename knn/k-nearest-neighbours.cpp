@@ -248,3 +248,77 @@ pair<vector<float>, int> majority_vote(vector<tuple<vector<float>, int, float>>&
     return vote;
 }
 
+vector<pair<vector<float>, int>> train_list(vector<pair<vector<float>, int>>& feature_labels,
+                                            vector<vector<float>>& test_features, size_t K, bool parallel = false
+                                            , string mode = "sections")
+{
+    vector<tuple<vector<float>, int, float>> list;
+    pair<vector<float>, int> vote;
+    vector<pair<vector<float>, int>> trained;
+    time_distance_value = 0;
+    time_sort_value = 0;
+    for (int i = 0; i < test_features.size(); i++)
+    {
+        if (!parallel)
+        {
+            start_distance = high_resolution_clock::now();
+            list = euclidean_list(feature_labels, test_features[i]);
+            end_distance = high_resolution_clock::now();
+            auto time_distance = duration_cast<nanoseconds>(end_distance - start_distance);
+            time_distance_value += time_distance.count();
+
+            start_sort = high_resolution_clock::now();
+            q_sort_items(0, list.size() - 1, list);
+            end_sort = high_resolution_clock::now();
+            auto time_sort = duration_cast<nanoseconds>(end_sort - start_sort);
+            time_sort_value += time_sort.count();
+
+            vote = majority_vote(list, test_features[0], K);
+            trained.push_back(vote);
+        }
+        else
+        {
+            if (mode == "Sections")
+            {
+                start_distance = high_resolution_clock::now();
+                list = euclidean_list(feature_labels, test_features[i], parallel);
+                end_distance = high_resolution_clock::now();
+                auto time_distance = duration_cast<nanoseconds>(end_distance - start_distance);
+                time_distance_value += time_distance.count();
+
+                start_sort = high_resolution_clock::now();
+                q_sort_sections(0, list.size() - 1, list);
+                end_sort = high_resolution_clock::now();
+                auto time_sort = duration_cast<nanoseconds>(end_sort - start_sort);
+                time_sort_value += time_sort.count();
+
+                vote = majority_vote(list, test_features[0], K);
+                trained.push_back(vote);
+            }
+            else if (mode == "Tasks")
+            {
+                start_distance = high_resolution_clock::now();
+                list = euclidean_list(feature_labels, test_features[i], parallel);
+                end_distance = high_resolution_clock::now();
+                auto time_distance = duration_cast<nanoseconds>(end_distance - start_distance);
+                time_distance_value += time_distance.count();
+
+                start_sort = high_resolution_clock::now();
+#pragma omp parallel
+                {
+#pragma omp single
+                    q_sort_tasks(0, list.size() - 1, list);
+                }
+                end_sort = high_resolution_clock::now();
+                auto time_sort = duration_cast<nanoseconds>(end_sort - start_sort);
+                time_sort_value += time_sort.count();
+
+                vote = majority_vote(list, test_features[0], K);
+                trained.push_back(vote);
+            }
+        }
+    }
+
+    return trained;
+}
+
