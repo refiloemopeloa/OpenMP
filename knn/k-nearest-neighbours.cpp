@@ -18,10 +18,10 @@ time_point<system_clock> start_distance, end_distance;
 size_t time_distance_value = 0;
 time_point<system_clock> start_sort, end_sort;
 size_t time_sort_value = 0;
-const size_t NUM_THREADS = 8;
+const size_t NUM_THREADS = 16;
 
 // Reads a flattened (NUM_SAMPLES x FEATURE_DIM) binary file of floats
-vector<vector<float>> read_features(const string& filename, size_t num_samples, size_t feature_dim)
+vector<vector<float>> read_features(const string &filename, size_t num_samples, size_t feature_dim)
 {
     size_t total_elements = num_samples * feature_dim;
     vector<float> flat(total_elements);
@@ -32,7 +32,7 @@ vector<vector<float>> read_features(const string& filename, size_t num_samples, 
         throw runtime_error("Could not open file: " + filename);
     }
 
-    file.read(reinterpret_cast<char*>(flat.data()), total_elements * sizeof(float));
+    file.read(reinterpret_cast<char *>(flat.data()), total_elements * sizeof(float));
     if (!file)
         throw runtime_error("Error reading file: " + filename);
     file.close();
@@ -50,7 +50,7 @@ vector<vector<float>> read_features(const string& filename, size_t num_samples, 
 }
 
 // Reads a binary file containing labels.
-vector<int> read_labels(const string& filename, size_t num_samples)
+vector<int> read_labels(const string &filename, size_t num_samples)
 {
     vector<int> labels(num_samples);
 
@@ -60,7 +60,7 @@ vector<int> read_labels(const string& filename, size_t num_samples)
         throw runtime_error("Could not open file: " + filename);
     }
 
-    file.read(reinterpret_cast<char*>(labels.data()), num_samples * sizeof(int));
+    file.read(reinterpret_cast<char *>(labels.data()), num_samples * sizeof(int));
     if (!file)
         throw runtime_error("Error reading file: " + filename);
     file.close();
@@ -68,7 +68,7 @@ vector<int> read_labels(const string& filename, size_t num_samples)
     return labels;
 }
 
-vector<pair<vector<float>, int>> make_list(vector<vector<float>>& features, vector<int>& labels)
+vector<pair<vector<float>, int>> make_list(vector<vector<float>> &features, vector<int> &labels)
 {
     vector<pair<vector<float>, int>> items;
     pair<vector<float>, int> item;
@@ -82,7 +82,7 @@ vector<pair<vector<float>, int>> make_list(vector<vector<float>>& features, vect
     return items;
 }
 
-float compute_euclidean(vector<float>& qi, vector<float>& pi)
+float compute_euclidean(vector<float> &qi, vector<float> &pi)
 {
     float euclidean = 0;
 
@@ -94,7 +94,7 @@ float compute_euclidean(vector<float>& qi, vector<float>& pi)
     return powf(euclidean, 0.5);
 }
 
-tuple<vector<float>, int, float> euclidean_value(pair<vector<float>, int>& p, vector<float>& qi)
+tuple<vector<float>, int, float> euclidean_value(pair<vector<float>, int> &p, vector<float> &qi)
 {
     tuple<vector<float>, int, float> euclidean_label_tuple;
     float euclidean = compute_euclidean(qi, p.first);
@@ -102,8 +102,8 @@ tuple<vector<float>, int, float> euclidean_value(pair<vector<float>, int>& p, ve
     return euclidean_label_tuple;
 }
 
-vector<tuple<vector<float>, int, float>> euclidean_list(vector<pair<vector<float>, int>>& train,
-                                                        vector<float>& test_point, bool parallel = false)
+vector<tuple<vector<float>, int, float>> euclidean_list(vector<pair<vector<float>, int>> &train,
+                                                        vector<float> &test_point, bool parallel = false)
 {
     vector<tuple<vector<float>, int, float>> list;
     tuple<vector<float>, int, float> point;
@@ -112,7 +112,7 @@ vector<tuple<vector<float>, int, float>> euclidean_list(vector<pair<vector<float
     {
         int size = train.size();
         int fraction = size / NUM_THREADS;
-#pragma omp parallel for schedule(static,fraction)  private(point)
+#pragma omp parallel for schedule(static, fraction) private(point)
         for (int i = 0; i < train.size(); i++)
         {
             point = euclidean_value(train[i], test_point);
@@ -133,7 +133,7 @@ vector<tuple<vector<float>, int, float>> euclidean_list(vector<pair<vector<float
     return list;
 }
 
-int partition(int left, int right, vector<tuple<vector<float>, int, float>>& items)
+int partition(int left, int right, vector<tuple<vector<float>, int, float>> &items)
 {
     // Added reference
     float item = get<2>(items[right]);
@@ -152,7 +152,7 @@ int partition(int left, int right, vector<tuple<vector<float>, int, float>>& ite
     return i + 1;
 }
 
-void q_sort_items(int left, int right, vector<tuple<vector<float>, int, float>>& items)
+void q_sort_items(int left, int right, vector<tuple<vector<float>, int, float>> &items)
 {
     // Added reference
     if (left < right)
@@ -163,8 +163,7 @@ void q_sort_items(int left, int right, vector<tuple<vector<float>, int, float>>&
     }
 }
 
-
-void q_sort_sections(int left, int right, vector<tuple<vector<float>, int, float>>& items,
+void q_sort_sections(int left, int right, vector<tuple<vector<float>, int, float>> &items,
                      int depth = 0)
 {
     if (left < right)
@@ -194,7 +193,7 @@ void q_sort_sections(int left, int right, vector<tuple<vector<float>, int, float
     }
 }
 
-void q_sort_tasks(int left, int right, vector<tuple<vector<float>, int, float>>& items, int depth = 0)
+void q_sort_tasks(int left, int right, vector<tuple<vector<float>, int, float>> &items, int depth = 0)
 {
     if (left < right)
     {
@@ -218,7 +217,7 @@ void q_sort_tasks(int left, int right, vector<tuple<vector<float>, int, float>>&
     }
 }
 
-pair<vector<float>, int> majority_vote(vector<tuple<vector<float>, int, float>>& list, vector<float>& qi, size_t K)
+pair<vector<float>, int> majority_vote(vector<tuple<vector<float>, int, float>> &list, vector<float> &qi, size_t K)
 {
     pair<int, int> most = {get<1>(list[0]), 1};
 
@@ -248,9 +247,8 @@ pair<vector<float>, int> majority_vote(vector<tuple<vector<float>, int, float>>&
     return vote;
 }
 
-vector<pair<vector<float>, int>> train_list(vector<pair<vector<float>, int>>& feature_labels,
-                                            vector<vector<float>>& test_features, size_t K, bool parallel = false
-                                            , string mode = "sections")
+vector<pair<vector<float>, int>> train_list(vector<pair<vector<float>, int>> &feature_labels,
+                                            vector<vector<float>> &test_features, size_t K, bool parallel = false, string mode = "sections")
 {
     vector<tuple<vector<float>, int, float>> list;
     pair<vector<float>, int> vote;
@@ -322,8 +320,8 @@ vector<pair<vector<float>, int>> train_list(vector<pair<vector<float>, int>>& fe
     return trained;
 }
 
-float compute_accuracy(vector<pair<vector<float>, int>>& trained_list,
-                       vector<pair<vector<float>, int>>& test_feature_labels)
+float compute_accuracy(vector<pair<vector<float>, int>> &trained_list,
+                       vector<pair<vector<float>, int>> &test_feature_labels)
 {
     int correct = 0;
     for (int i = 0; i < trained_list.size(); i++)
@@ -345,7 +343,7 @@ int main()
 {
     constexpr size_t NUM_SAMPLES = 50000;
     constexpr size_t FEATURE_DIM = 512;
-    constexpr size_t K = 3;
+    vector<size_t> K = {3, 5, 7};
     constexpr size_t NUM_TESTS = NUM_SAMPLES / 5;
     omp_set_num_teams(NUM_THREADS);
 
@@ -362,60 +360,65 @@ int main()
 
     vector<string> modes = {"Sections", "Tasks"};
 
-    start_total = high_resolution_clock::now();
-    vector<pair<vector<float>, int>> trained_list = train_list(feature_labels, test_features, K);
-    end_total = high_resolution_clock::now();
-
-    auto time_total = duration_cast<nanoseconds>(end_total - start_total);
-
-    float accuracy = compute_accuracy(trained_list, test_feature_labels);
-
-    size_t total_time = time_total.count();
-
-    size_t serial_time = total_time;
-
-    // cout << "Sample size:\t" << NUM_SAMPLES << "\n" << "K:\t" << K << "\n" <<  "Accuracy:\t" << setprecision(3) << accuracy << "\n" << "Times\n" << "===========\n" << "Distance\t|Sort\t\t|TOTAL\t\t|\n" << setprecision(8) << static_cast<float>(time_distance_value)*pow(10,-9) << "\t|" << static_cast<float>(time_sort_value)*pow(10,-9) << "\t|" << static_cast<float>(total_time)*pow(10,-9) << "|\n";
-
-    cout << "K-NEAREST NEIGHBOURS\n====================\n";
-    cout << "INPUTS\n--------------------\n";
-    cout << "Training Sample Size:\t" << NUM_SAMPLES << "\n";
-    cout << "Test Sample Size:\t" << NUM_TESTS << "\n";
-    cout << "K:\t\t\t" << K << "\n";
-    cout << "====================\n";
-    cout << "ANALYSIS\n--------------------\n";
-    cout << "Accuracy:\t" << accuracy << "\n";
-    cout << "====================\n";
-    cout << "EXECUTION TIME\n--------------------\n";
-    cout << "--------------------\n";
-    cout << "Serial Execution Time\n--------------------\n";
-    cout << "Distance:\t" << setprecision(8) << static_cast<float>(time_distance_value) * pow(10, -9) << "\n";
-    cout << "Sort:\t\t" << setprecision(8) << static_cast<float>(time_sort_value) * pow(10, -9) << "\n";
-    cout << "TOTAL:\t\t" << setprecision(8) << static_cast<float>(total_time) * pow(10, -9) << "\n";
-    cout << "--------------------\n";
-    cout << "Parallel Execution Time\n--------------------\n";
-
-    float speedup = 0;
-
-    for (string mode: modes)
+    for (size_t k : K)
     {
-        cout << mode <<"\n\n";
-        start_total = high_resolution_clock::now();
-        trained_list = train_list(feature_labels, test_features, K,true, mode);
-        end_total = high_resolution_clock::now();
-        time_total = duration_cast<nanoseconds>(end_total - start_total);
-        total_time = time_total.count();
 
+        start_total = high_resolution_clock::now();
+        vector<pair<vector<float>, int>> trained_list = train_list(feature_labels, test_features, k);
+        end_total = high_resolution_clock::now();
+
+        auto time_total = duration_cast<nanoseconds>(end_total - start_total);
+
+        float accuracy = compute_accuracy(trained_list, test_feature_labels);
+
+        size_t total_time = time_total.count();
+
+        size_t serial_time = total_time;
+
+        // cout << "Sample size:\t" << NUM_SAMPLES << "\n" << "K:\t" << K << "\n" <<  "Accuracy:\t" << setprecision(3) << accuracy << "\n" << "Times\n" << "===========\n" << "Distance\t|Sort\t\t|TOTAL\t\t|\n" << setprecision(8) << static_cast<float>(time_distance_value)*pow(10,-9) << "\t|" << static_cast<float>(time_sort_value)*pow(10,-9) << "\t|" << static_cast<float>(total_time)*pow(10,-9) << "|\n";
+
+        cout << "K-NEAREST NEIGHBOURS\n====================\n";
+        cout << "INPUTS\n--------------------\n";
+        cout << "Training Sample Size:\t" << NUM_SAMPLES << "\n";
+        cout << "Test Sample Size:\t" << NUM_TESTS << "\n";
+        cout << "K:\t\t\t" << k << "\n";
+        cout << "====================\n";
+        cout << "ANALYSIS\n--------------------\n";
+        cout << "Accuracy:\t" << accuracy << "\n";
+        cout << "====================\n";
+        cout << "EXECUTION TIME\n--------------------\n";
+        cout << "--------------------\n";
+        cout << "Serial Execution Time\n--------------------\n";
         cout << "Distance:\t" << setprecision(8) << static_cast<float>(time_distance_value) * pow(10, -9) << "\n";
         cout << "Sort:\t\t" << setprecision(8) << static_cast<float>(time_sort_value) * pow(10, -9) << "\n";
         cout << "TOTAL:\t\t" << setprecision(8) << static_cast<float>(total_time) * pow(10, -9) << "\n";
-
-        speedup = static_cast<float>(serial_time)/total_time;
-        cout << "\n" << "SPEEDUP:\t\t" << speedup << "\n";
-
         cout << "--------------------\n";
-    }
+        cout << "Parallel Execution Time\n--------------------\n";
 
-    cout << "\n====================\n";
+        float speedup = 0;
+
+        for (string mode : modes)
+        {
+            cout << mode << "\n\n";
+            start_total = high_resolution_clock::now();
+            trained_list = train_list(feature_labels, test_features, K, true, mode);
+            end_total = high_resolution_clock::now();
+            time_total = duration_cast<nanoseconds>(end_total - start_total);
+            total_time = time_total.count();
+
+            cout << "Distance:\t" << setprecision(8) << static_cast<float>(time_distance_value) * pow(10, -9) << "\n";
+            cout << "Sort:\t\t" << setprecision(8) << static_cast<float>(time_sort_value) * pow(10, -9) << "\n";
+            cout << "TOTAL:\t\t" << setprecision(8) << static_cast<float>(total_time) * pow(10, -9) << "\n";
+
+            speedup = static_cast<float>(serial_time) / total_time;
+            cout << "\n"
+                 << "SPEEDUP:\t\t" << speedup << "\n";
+
+            cout << "--------------------\n";
+        }
+
+        cout << "\n====================\n";
+    }
 
     return 0;
 }
