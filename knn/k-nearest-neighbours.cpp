@@ -81,6 +81,7 @@ vector<pair<vector<float>, int>> make_list(vector<vector<float>>& features, vect
 
     return items;
 }
+
 float compute_euclidean(vector<float>& qi, vector<float>& pi)
 {
     float euclidean = 0;
@@ -91,4 +92,12 @@ float compute_euclidean(vector<float>& qi, vector<float>& pi)
     }
 
     return powf(euclidean, 0.5);
+}
+
+tuple<vector<float>, int, float> euclidean_value(pair<vector<float>, int>& p, vector<float>& qi)
+{
+    tuple<vector<float>, int, float> euclidean_label_tuple;
+    float euclidean = compute_euclidean(qi, p.first);
+    euclidean_label_tuple = make_tuple(p.first, p.second, euclidean);
+    return euclidean_label_tuple;
 }
