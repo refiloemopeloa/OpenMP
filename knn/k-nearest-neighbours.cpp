@@ -101,3 +101,35 @@ tuple<vector<float>, int, float> euclidean_value(pair<vector<float>, int>& p, ve
     euclidean_label_tuple = make_tuple(p.first, p.second, euclidean);
     return euclidean_label_tuple;
 }
+
+vector<tuple<vector<float>, int, float>> euclidean_list(vector<pair<vector<float>, int>>& train,
+                                                        vector<float>& test_point, bool parallel = false)
+{
+    vector<tuple<vector<float>, int, float>> list;
+    tuple<vector<float>, int, float> point;
+
+    if (parallel)
+    {
+        int size = train.size();
+        int fraction = size / NUM_THREADS;
+#pragma omp parallel for schedule(static,fraction)  private(point)
+        for (int i = 0; i < train.size(); i++)
+        {
+            point = euclidean_value(train[i], test_point);
+#pragma omp critical
+            {
+                list.push_back(point);
+            }
+        }
+    }
+    else
+    {
+        for (pair<vector<float>, int> train_point : train)
+        {
+            point = euclidean_value(train_point, test_point);
+            list.push_back(point);
+        }
+    }
+    return list;
+}
+
