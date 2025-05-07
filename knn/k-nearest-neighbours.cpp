@@ -152,3 +152,69 @@ int partition(int left, int right, vector<tuple<vector<float>, int, float>>& ite
     return i + 1;
 }
 
+void q_sort_items(int left, int right, vector<tuple<vector<float>, int, float>>& items)
+{
+    // Added reference
+    if (left < right)
+    {
+        int q = partition(left, right, items);
+        q_sort_items(left, q - 1, items);
+        q_sort_items(q + 1, right, items);
+    }
+}
+
+
+void q_sort_sections(int left, int right, vector<tuple<vector<float>, int, float>>& items,
+                     int depth = 0)
+{
+    if (left < right)
+    {
+        int q = partition(left, right, items);
+
+        // Switch to sequential for small subarrays or when we've created enough parallelism
+        if ((right - left) < 1000 || depth >= omp_get_max_threads())
+        {
+            q_sort_sections(left, q - 1, items, depth + 1);
+            q_sort_sections(q + 1, right, items, depth + 1);
+        }
+        else
+        {
+#pragma omp parallel sections
+            {
+#pragma omp section
+                {
+                    q_sort_sections(left, q - 1, items, depth + 1);
+                }
+#pragma omp section
+                {
+                    q_sort_sections(q + 1, right, items, depth + 1);
+                }
+            }
+        }
+    }
+}
+
+void q_sort_tasks(int left, int right, vector<tuple<vector<float>, int, float>>& items, int depth = 0)
+{
+    if (left < right)
+    {
+        int q = partition(left, right, items);
+
+        // Switch to sequential for small subarrays or when we've created enough parallelism
+        if ((right - left) < 1000 || depth >= omp_get_max_threads())
+        {
+            q_sort_tasks(left, q - 1, items, depth + 1);
+            q_sort_tasks(q + 1, right, items, depth + 1);
+        }
+        else
+        {
+#pragma omp task shared(items) firstprivate(left, q)
+            q_sort_tasks(left, q - 1, items, depth + 1);
+
+#pragma omp task shared(items) firstprivate(q, right)
+            q_sort_tasks(q + 1, right, items, depth + 1);
+#pragma omp taskwait
+        }
+    }
+}
+
