@@ -218,3 +218,33 @@ void q_sort_tasks(int left, int right, vector<tuple<vector<float>, int, float>>&
     }
 }
 
+pair<vector<float>, int> majority_vote(vector<tuple<vector<float>, int, float>>& list, vector<float>& qi, size_t K)
+{
+    pair<int, int> most = {get<1>(list[0]), 1};
+
+    for (int i = 1; i < K; i++)
+    {
+        if (most.first == get<1>(list[i]))
+        {
+            most.second++;
+        }
+        else if (most.second > 1)
+        {
+            most.second--;
+        }
+        else
+        {
+            most.first = get<1>(list[i]);
+        }
+    }
+
+    if (most.second == 1)
+    {
+        most.first = get<1>(list[0]);
+    }
+
+    pair<vector<float>, int> vote = {qi, most.first};
+
+    return vote;
+}
+
