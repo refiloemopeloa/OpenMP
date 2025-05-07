@@ -341,3 +341,81 @@ float compute_accuracy(vector<pair<vector<float>, int>>& trained_list,
     return accuracy;
 }
 
+int main()
+{
+    constexpr size_t NUM_SAMPLES = 50000;
+    constexpr size_t FEATURE_DIM = 512;
+    constexpr size_t K = 3;
+    constexpr size_t NUM_TESTS = NUM_SAMPLES / 5;
+    omp_set_num_teams(NUM_THREADS);
+
+    vector<vector<float>> features = read_features("train/train_features.bin", NUM_SAMPLES, FEATURE_DIM);
+    vector<int> labels = read_labels("train/train_labels.bin", NUM_SAMPLES);
+
+    vector<vector<float>> test_features = read_features("test/test_features.bin", NUM_TESTS, FEATURE_DIM);
+    vector<int> test_labels = read_labels("test/test_labels.bin", NUM_TESTS);
+
+    vector<pair<vector<float>, int>> feature_labels = make_list(features, labels);
+    vector<pair<vector<float>, int>> test_feature_labels = make_list(test_features, test_labels);
+
+    time_point<system_clock> start_total, end_total;
+
+    vector<string> modes = {"Sections", "Tasks"};
+
+    start_total = high_resolution_clock::now();
+    vector<pair<vector<float>, int>> trained_list = train_list(feature_labels, test_features, K);
+    end_total = high_resolution_clock::now();
+
+    auto time_total = duration_cast<nanoseconds>(end_total - start_total);
+
+    float accuracy = compute_accuracy(trained_list, test_feature_labels);
+
+    size_t total_time = time_total.count();
+
+    size_t serial_time = total_time;
+
+    // cout << "Sample size:\t" << NUM_SAMPLES << "\n" << "K:\t" << K << "\n" <<  "Accuracy:\t" << setprecision(3) << accuracy << "\n" << "Times\n" << "===========\n" << "Distance\t|Sort\t\t|TOTAL\t\t|\n" << setprecision(8) << static_cast<float>(time_distance_value)*pow(10,-9) << "\t|" << static_cast<float>(time_sort_value)*pow(10,-9) << "\t|" << static_cast<float>(total_time)*pow(10,-9) << "|\n";
+
+    cout << "K-NEAREST NEIGHBOURS\n====================\n";
+    cout << "INPUTS\n--------------------\n";
+    cout << "Training Sample Size:\t" << NUM_SAMPLES << "\n";
+    cout << "Test Sample Size:\t" << NUM_TESTS << "\n";
+    cout << "K:\t\t\t" << K << "\n";
+    cout << "====================\n";
+    cout << "ANALYSIS\n--------------------\n";
+    cout << "Accuracy:\t" << accuracy << "\n";
+    cout << "====================\n";
+    cout << "EXECUTION TIME\n--------------------\n";
+    cout << "--------------------\n";
+    cout << "Serial Execution Time\n--------------------\n";
+    cout << "Distance:\t" << setprecision(8) << static_cast<float>(time_distance_value) * pow(10, -9) << "\n";
+    cout << "Sort:\t\t" << setprecision(8) << static_cast<float>(time_sort_value) * pow(10, -9) << "\n";
+    cout << "TOTAL:\t\t" << setprecision(8) << static_cast<float>(total_time) * pow(10, -9) << "\n";
+    cout << "--------------------\n";
+    cout << "Parallel Execution Time\n--------------------\n";
+
+    float speedup = 0;
+
+    for (string mode: modes)
+    {
+        cout << mode <<"\n\n";
+        start_total = high_resolution_clock::now();
+        trained_list = train_list(feature_labels, test_features, K,true, mode);
+        end_total = high_resolution_clock::now();
+        time_total = duration_cast<nanoseconds>(end_total - start_total);
+        total_time = time_total.count();
+
+        cout << "Distance:\t" << setprecision(8) << static_cast<float>(time_distance_value) * pow(10, -9) << "\n";
+        cout << "Sort:\t\t" << setprecision(8) << static_cast<float>(time_sort_value) * pow(10, -9) << "\n";
+        cout << "TOTAL:\t\t" << setprecision(8) << static_cast<float>(total_time) * pow(10, -9) << "\n";
+
+        speedup = static_cast<float>(serial_time)/total_time;
+        cout << "\n" << "SPEEDUP:\t\t" << speedup << "\n";
+
+        cout << "--------------------\n";
+    }
+
+    cout << "\n====================\n";
+
+    return 0;
+}
